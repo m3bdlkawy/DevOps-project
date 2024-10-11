@@ -1,0 +1,141 @@
+- name: Manage Kubernetes cluster initialization and health check
+  block:
+    - name: Check if the Kubernetes API server is reachable
+      become: false
+      ansible.builtin.command: "curl -s http://localhost:6443"
+      register: api_server_reachable
+      ignore_errors: true
+
+    - name: API server reachability
+      ansible.builtin.debug:
+        msg: "API server reachable status: {{ api_server_reachable.rc }}. Response: {{ api_server_reachable.stdout }}"
+      when: api_server_reachable.rc == 0
+
+    - name: Check Kubernetes cluster status (if API server is reachable)
+      become: false
+      ansible.builtin.command: "kubectl get nodes"
+      register: cluster_initial
+      when: api_server_reachable.rc == 0
+      ignore_errors: true
+
+    - name: Cluster status
+      ansible.builtin.debug:
+        msg: "Cluster status: {{ cluster_initial.stdout }}. Return code: {{ cluster_initial.rc }}"
+      when: api_server_reachable.rc == 0
+
+    - name: Check Kubernetes cluster health (if initialized and nodes present)
+      become: false
+      ansible.builtin.command: "kubectl get componentstatuses"
+      register: cluster_health
+      when: api_server_reachable.rc == 0 and cluster_initial.rc == 0 and 'NAME' in cluster_initial.stdout
+      ignore_errors: true
+
+    - name: Cluster health
+      ansible.builtin.debug:
+        msg: "Cluster health: {{ cluster_health.stdout }}. Return code: {{ cluster_health.rc }}"
+      when: api_server_reachable.rc == 0 and cluster_initial.rc == 0 and 'NAME' in cluster_initial.stdout
+
+    - name: Reset Kubernetes cluster if already initialized
+      ansible.builtin.shell: kubeadm reset -f
+      when: api_server_reachable.rc == 0
+      become: true
+
+    - name: Stop any running etcd processes
+      ansible.builtin.shell: |
+        systemctl stop etcd || true
+        pkill etcd || true
+      become: true
+      ignore_errors: true
+
+    - name: Ensure ports 2379, 6443, and 2380 are free
+      ansible.builtin.shell: |
+        lsof -ti :2379,2380,6443 | xargs kill -9 || true
+      become: true
+      ignore_errors: true
+
+    - name: Forcefully clean up /var/lib/etcd directory
+      ansible.builtin.shell: |
+        rm -rf /var/lib/etcd/*
+      become: true
+      ignore_errors: true
+
+    - name: Remove leftover Kubernetes directories and files
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      with_items:
+        - /etc/kubernetes/
+        - /var/lib/kubelet/
+        - $HOME/.kube/config
+      ignore_errors: true
+      become: true
+
+    - name: Ensure /etc/kubernetes directory exists
+      ansible.builtin.file:
+        path: /etc/kubernetes
+        state: directory
+        mode: '0755'
+      become: true
+
+    - name: Gather Master Node IP
+      ansible.builtin.command: hostname -I
+      register: master_ip_raw
+      changed_when: false
+
+    - name: Set Master Node IP
+      ansible.builtin.set_fact:
+        master_ip: "{{ master_ip_raw.stdout.split(' ')[0] | trim }}"
+
+    - name: Set API Server IP
+      ansible.builtin.set_fact:
+        api_server_ip: "{{ master_ip }}"
+
+    - name: Create kubeadm configuration file
+      ansible.builtin.template:
+        src: kubeadm-config.yml.j2
+        dest: /etc/kubernetes/kubeadm-config.yml
+        mode: '0644'
+      become: true
+
+    - name: Initialize Kubernetes cluster
+      ansible.builtin.command: sudo kubeadm init --config=/etc/kubernetes/kubeadm-config.yml
+      register: kubeadm_init
+      become: true
+
+  rescue:
+    - name: Reset Kubernetes cluster due to error
+      ansible.builtin.shell: kubeadm reset -f
+      become: true
+
+  always:
+    - name: Always perform this task
+      ansible.builtin.debug:
+        msg: "Kubernetes initialization check completed."
+
+- name: Create .kube directory
+  ansible.builtin.file:
+    path: /home/{{ ansible_user }}/.kube
+    state: directory
+    mode: '0755'
+  become: true
+  become_user: "{{ ansible_user }}"
+
+- name: Copy admin.conf to user's kube config
+  ansible.builtin.copy:
+    src: /etc/kubernetes/admin.conf
+    dest: /home/{{ ansible_user }}/.kube/config
+    remote_src: true
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0600'
+
+- name: Generate join command
+  ansible.builtin.command: kubeadm token create --print-join-command
+  register: join_command
+  run_once: true
+  changed_when: false
+
+- name: Set join command fact
+  ansible.builtin.set_fact:
+    join_command: "{{ join_command.stdout }}"
+  run_once: true

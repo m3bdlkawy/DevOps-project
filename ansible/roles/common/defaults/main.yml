@@ -1,0 +1,4 @@
+---
+sysctl_config_file: /etc/sysctl.d/kubernetes.conf
+modules_load_file: /etc/modules-load.d/containerd.conf
+swap_file: /etc/fstab

@@ -1,0 +1,23 @@
+- hosts: aws_ec2
+  become: true
+  gather_facts: true
+
+  roles:
+  - role: containerd
+  - role: common
+  - role: kubernetes
+
+- hosts: group_Name_master
+  become: true
+  gather_facts: true
+
+  roles:
+  - role: master
+  - role: cni
+
+- hosts: group_Name_worker
+  become: true
+  gather_facts: true
+
+  roles:
+  - role: worker

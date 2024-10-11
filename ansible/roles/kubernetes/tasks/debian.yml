@@ -1,0 +1,35 @@
+- name: Add Kubernetes GPG key
+  ansible.builtin.apt_key:
+    url: "{{ kubernetes_gpg_key_debian_url }}"
+    state: present
+    keyring: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+- name: Add Kubernetes repository
+  ansible.builtin.apt_repository:
+    repo: "{{ kubernetes_repo_debian }}"
+    state: present
+    filename: kubernetes.list
+
+- name: Update and upgrade APT packages
+  ansible.builtin.apt:
+    update_cache: true
+  when: ansible_os_family == "Debian"
+
+- name: Install Kubernetes components
+  ansible.builtin.package:
+    name: "{{ kubernetes_components }}"
+    state: present
+  register: kubernetes_installation
+  notify:
+  - Restart kubelet
+
+- name: Verify Kubernetes components installation
+  ansible.builtin.shell: dpkg -l | grep -E 'kubelet|kubeadm|kubectl'
+  register: kubernetes_check
+  changed_when: false
+  failed_when: kubernetes_check.rc != 0
+
+- name: Debug message for successful installation
+  ansible.builtin.debug:
+    msg: "Kubernetes components (kubelet, kubeadm, kubectl) are installed successfully on {{ inventory_hostname }}."
+  when: kubernetes_check.rc == 0

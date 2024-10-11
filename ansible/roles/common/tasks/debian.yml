@@ -1,0 +1,53 @@
+- name: Update and upgrade APT packages
+  ansible.builtin.apt:
+    update_cache: true
+  when: ansible_os_family == "Debian"
+
+- name: Disable swap
+  ansible.builtin.command: swapoff -a
+  become: true
+  changed_when: false
+
+- name: Disable swap permanently
+  ansible.builtin.replace:
+    path: "{{ swap_file }}"
+    regexp: '^\s*(.*\s+swap\s+.*)$'
+    replace: '#\1'
+  become: true
+
+- name: Load kernel modules
+  ansible.builtin.copy:
+    dest: "{{ modules_load_file }}"
+    content: |
+      overlay
+      br_netfilter
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0644'
+  become: true
+
+- name: Load overlay module
+  ansible.builtin.modprobe: name=overlay
+  become: true
+
+- name: Load br_netfilter module
+  ansible.builtin.modprobe: name=br_netfilter
+  become: true
+
+- name: Set kernel parameters for Kubernetes
+  ansible.builtin.copy:
+    dest: "{{ sysctl_config_file }}"
+    content: |
+      net.bridge.bridge-nf-call-ip6tables = 1
+      net.bridge.bridge-nf-call-iptables = 1
+      net.ipv4.ip_forward = 1
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0644'
+  become: true
+
+- name: Apply sysctl parameters
+  ansible.builtin.command: sysctl --system
+  become: true
+  changed_when: false
+
