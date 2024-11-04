@@ -1,4 +1,0 @@
-# Main CNI task file to install Flannel only
-
-- name: Install Flannel network plugin for Kubernetes
-  include_tasks: flannel.yml

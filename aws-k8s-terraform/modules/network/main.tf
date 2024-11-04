@@ -1,6 +1,6 @@
 resource "aws_vpc" "k8s_vpc" {
-  cidr_block = var.vpc_cidr
-  enable_dns_hostnames = true
+  cidr_block              = var.vpc_cidr
+  enable_dns_hostnames    = true
 }
 
 resource "aws_subnet" "k8s_subnet" {
@@ -31,23 +31,25 @@ resource "aws_security_group" "k8s_sg" {
   vpc_id = aws_vpc.k8s_vpc.id
 
   ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    from_port   = 6443
-    to_port     = 6443
+    from_port   = 0
+    to_port     = 65535
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
     from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
+    to_port     = 65535
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+}
+
+resource "aws_security_group_rule" "allow_all_egress" {
+  type            = "egress"
+  from_port      = 0
+  to_port        = 0
+  protocol       = "-1" // All protocols
+  security_group_id = aws_security_group.k8s_sg.id
+  cidr_blocks     = ["0.0.0.0/0"]
 }
