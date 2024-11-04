@@ -1,0 +1,15 @@
+- name: Add Prometheus Helm repo
+  community.general.helm_repository:
+    name: prometheus-community
+    repo_url: https://prometheus-community.github.io/helm-charts
+    state: present
+
+- name: Deploy Prometheus using Helm
+  community.general.helm:
+    name: prometheus
+    chart_ref: prometheus-community/prometheus
+    kube_context: "{{ kube_context }}"
+    release_namespace: "{{ prometheus_namespace }}"
+    create_namespace: true
+    values: "{{ prometheus_values | default(omit) }}"
+    state: present

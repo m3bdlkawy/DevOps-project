@@ -1,0 +1,35 @@
+---
+- name: Update apt package index
+  ansible.builtin.apt:
+    update_cache: yes
+
+- name: Install required packages
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+      - gnupg
+    state: present
+
+- name: Add Docker GPG key (Debian)
+  ansible.builtin.apt_key:
+    url: "{{ gpgkey }}"
+    state: present
+  become: true
+
+- name: Add Docker repository (Debian)
+  ansible.builtin.apt_repository:
+    repo: "{{ docker_repo_debian }}"
+    state: present
+  become: true
+
+- name: Update apt package index
+  ansible.builtin.apt:
+    update_cache: yes
+
+- name: Install containerd and related packages
+  ansible.builtin.apt:
+    name:
+      - containerd.io
+    state: present
+  notify: Enable and start containerd on Debian

@@ -1,0 +1,14 @@
+- name: Include all variables
+  ansible.builtin.include_vars: vars/main.yml
+- name: Removing old package and prepare server to install containerd
+  ansible.builtin.include_tasks: tasks/preparing_server.yml
+  when: ansible_distribution in ['CentOS', 'Debian', 'Fedora', 'RedHat', 'Ubuntu']
+- name: Install containerd on Debian
+  ansible.builtin.include_tasks: tasks/Debian.yml
+  when: ansible_distribution in ['Debian', 'Ubuntu']
+- name: Install containerd on RHEL
+  ansible.builtin.include_tasks: tasks/Rhel.yml
+  when: ansible_distribution in ['CentOS', 'Fedora', 'RedHat']
+- name: Configure containerd
+  ansible.builtin.include_tasks: configur-containerd.yml
+  when: ansible_distribution in ['CentOS', 'Debian', 'Fedora', 'RedHat', 'Ubuntu']

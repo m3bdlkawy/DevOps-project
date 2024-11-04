@@ -1,0 +1,3 @@
+{%- for host in groups['etcd'] %}
+{{ "%-32s" | format(hostvars[host]['ansible_host']) }}{{ host }}
+{% endfor %}

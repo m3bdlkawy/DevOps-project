@@ -1,0 +1,48 @@
+- name: Check if the worker node is part of the Kubernetes cluster
+  ansible.builtin.stat:
+    path: /etc/kubernetes/kubelet.conf
+  register: kubelet_conf_stat
+
+- name: Reset the Kubernetes setup on the worker node if it is already part of the cluster
+  ansible.builtin.command: kubeadm reset -f
+  when: kubelet_conf_stat.stat.exists
+  ignore_errors: true
+  become: true
+
+- name: Remove Kubernetes configuration and data directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+  - /etc/cni/net.d
+  - /var/lib/cni/
+  - /var/lib/kubelet/*
+  - /etc/kubernetes/
+  when: kubelet_conf_stat.stat.exists
+  ignore_errors: true
+  become: true
+
+- name: Restart the kubelet service
+  ansible.builtin.systemd:
+    name: kubelet
+    state: restarted
+  when: kubelet_conf_stat.stat.exists
+  become: true
+
+- name: Restart the containerd service
+  ansible.builtin.systemd:
+    name: containerd
+    state: restarted
+  become: true
+
+- name: Get the join command from the master node
+  ansible.builtin.set_fact:
+    join_command: "{{ hostvars[groups['master'][0]].join_command }}"
+
+- name: Join the Kubernetes cluster
+  ansible.builtin.command: "{{ join_command }}"
+  register: join_output
+  changed_when: "'node joined' in join_output.stdout.lower()"
+  failed_when: "'error' in join_output.stderr.lower()"
+  when: kubelet_conf_stat.stat.exists or not kubelet_conf_stat.stat.exists
+  become: true

@@ -1,0 +1,6 @@
+- name: Deploy Monitoring Stack in Kubernetes
+  hosts: group_Name_master
+  become: true
+  gather_facts: true
+  roles:
+  - monitoring_stack

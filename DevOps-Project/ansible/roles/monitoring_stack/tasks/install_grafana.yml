@@ -1,0 +1,15 @@
+- name: Add Grafana Helm repo
+  community.general.helm_repository:
+    name: grafana
+    repo_url: https://grafana.github.io/helm-charts
+    state: present
+
+- name: Deploy Grafana using Helm
+  community.general.helm:
+    name: grafana
+    chart_ref: grafana/grafana
+    kube_context: "{{ kube_context }}"
+    release_namespace: "{{ grafana_namespace }}"
+    create_namespace: true
+    values: "{{ grafana_values | default(omit) }}"
+    state: present

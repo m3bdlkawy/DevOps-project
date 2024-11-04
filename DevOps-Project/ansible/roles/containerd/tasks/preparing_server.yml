@@ -1,0 +1,60 @@
+- name: Remove Docker packages on CentOS
+  ansible.builtin.yum:
+    name:
+    - docker
+    - docker-client
+    - docker-client-latest
+    - docker-common
+    - docker-latest
+    - docker-latest-logrotate
+    - docker-logrotate
+    - docker-engine
+    state: absent
+  become: true
+  when: ansible_distribution == 'CentOS'
+
+- name: Remove Docker and related packages on Ubuntu
+  ansible.builtin.apt:
+    name: '{{ item }}'
+    state: absent
+  loop:
+  - docker.io
+  - docker-doc
+  - docker-compose
+  - docker-compose-v2
+  - podman-docker
+  - containerd
+  - runc
+  become: true
+  when: ansible_distribution == 'Ubuntu'
+
+- name: Remove Docker and related packages on Fedora
+  ansible.builtin.dnf:
+    name: '{{ item }}'
+    state: absent
+  loop:
+  - docker
+  - docker-client
+  - docker-client-latest
+  - docker-common
+  - docker-latest
+  - docker-latest-logrotate
+  - docker-logrotate
+  - docker-selinux
+  - docker-engine-selinux
+  - docker-engine
+  become: true
+  when: ansible_distribution == 'Fedora'
+- name: Ensure /etc/hosts contains the cluster nodes
+  ansible.builtin.blockinfile:
+    path: /etc/hosts
+    block: |
+      {% for host in groups['all'] %}
+      {{ hostvars[host]['ansible_host'] }} {{ hostvars[host]['inventory_hostname'] }}
+      {% endfor %}
+    marker: "# BEGIN ANSIBLE MANAGED BLOCK"
+    create: yes
+    state: present
+    insertafter: EOF
+    backup: yes
+  become: true

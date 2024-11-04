@@ -1,0 +1,10 @@
+---
+kubernetes_gpg_key_debian_url: "https://pkgs.k8s.io/core:/stable:/{{ kubernetes_version }}/deb/Release.key"
+kubernetes_gpg_key_redhat_url: "https://pkgs.k8s.io/core:/stable:/{{ kubernetes_version }}/rpm/repodata/repomd.xml.key"
+kubernetes_repo_debian: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/{{ kubernetes_version }}/deb/ /"
+kubernetes_repo_redhat: "https://pkgs.k8s.io/core:/stable:/{{ kubernetes_version }}/rpm/"
+kubernetes_version: "v1.31"
+kubernetes_components:
+  - kubelet
+  - kubeadm
+  - kubectl

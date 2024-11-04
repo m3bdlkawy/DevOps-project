@@ -1,0 +1,5 @@
+apiVersion: v2
+name: your-helm-chart
+description: A Helm chart for deploying a specific container
+version: 0.1.0
+appVersion: "1.0" # Version of your application

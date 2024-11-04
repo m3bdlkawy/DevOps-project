@@ -1,0 +1,4 @@
+- name: Deploy Monitoring Stack in Kubernetes
+  include_tasks:
+  - install_prometheus.yml
+  - install_grafana.yml

@@ -1,0 +1,23 @@
+- hosts: all
+  become: true
+  gather_facts: true
+
+  roles:
+  - role: containerd
+  - role: common
+  - role: kubernetes
+
+- hosts: master
+  become: true
+  gather_facts: true
+
+  roles:
+  - role: master
+  - role: cni
+
+- hosts: worker
+  become: true
+  gather_facts: true
+
+  roles:
+  - role: worker

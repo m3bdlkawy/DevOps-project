@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}  # Name of the deployment
+  namespace: {{ .Values.namespace | default "default" }}  # Specify the namespace
+spec:
+  replicas: {{ .Values.replicaCount | default 1 }}  # Number of replicas (default: 1)
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}  # Label to match
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}  # Label for the pods
+    spec:
+      containers:
+      - name: {{ .Release.Name }}  # Name of the container
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"  # Image from values.yaml
+        ports:
+        - containerPort: {{ .Values.containerPort | default 80 }}  # Container port (default: 80)
+        resources:
+          limits:
+            memory: {{ .Values.resources.limits.memory | default "256Mi" }}  # Memory limit (default: 256Mi)
+            cpu: {{ .Values.resources.limits.cpu | default "500m" }}  # CPU limit (default: 500m)
+          requests:
+            memory: {{ .Values.resources.requests.memory | default "128Mi" }}  # Memory request (default: 128Mi)
+            cpu: {{ .Values.resources.requests.cpu | default "250m" }}  # CPU request (default: 250m)

@@ -1,0 +1,10 @@
+worker_nodes:
+- worker-node1
+- worker-node2
+
+join_command: "{{ join_command.stdout }}"
+
+node_name: "{{ inventory_hostname }}"
+
+pod_network_cidr: "10.244.0.0/16"
+ansible_user: "mohamed"

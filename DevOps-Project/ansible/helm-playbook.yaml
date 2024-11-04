@@ -1,0 +1,69 @@
+- hosts: group_Name_master
+  become: true
+  gather_facts: true
+  tasks:
+  - name: Install required packages
+    apt:
+      name:
+      - curl
+      - software-properties-common
+      state: present
+      update_cache: yes
+
+  - name: Download Helm installation script
+    get_url:
+      url: https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+      dest: /home/ubuntu/get_helm.sh
+      mode: 'u+x'
+
+  - name: Check if the Helm installation script was downloaded
+    ansible.builtin.stat:
+      path: /home/ubuntu/get_helm.sh
+    register: helm_script
+
+  - name: Fail if Helm script is not found
+    fail:
+      msg: "Helm installation script was not downloaded!"
+    when: not helm_script.stat.exists
+
+  - name: Run the Helm installation script
+    command: /home/ubuntu/get_helm.sh
+    args:
+      chdir: /home/ubuntu
+
+  - name: Clean up installation script
+    file:
+      path: /home/ubuntu/get_helm.sh
+      state: absent
+
+  - name: Verify Helm installation
+    command: helm version
+    register: helm_version
+
+  - debug:
+      var: helm_version.stdout
+
+  - name: Add the stable Helm repository
+    command: helm repo add stable https://charts.helm.sh/stable
+
+  - name: Update Helm repositories
+    command: helm repo update
+
+  - name: Clone the GitHub repository
+    git:
+      repo: 'https://github.com/Mahmoudshookry/DevOps-Project.git'
+      dest: /home/ubuntu/DevOps-Project
+      version: master
+      force: yes
+
+  - name: Check if helm-chart directory exists
+    ansible.builtin.stat:
+      path: /home/ubuntu/DevOps-Project/helm-chart
+    register: helm_chart_dir
+
+  - name: Deploy Helm chart if directory exists
+    command: helm upgrade --install my-release . --values ./values.yaml --create-namespace --kubeconfig /home/ubuntu/.kube/config
+    args:
+      chdir: /home/ubuntu/DevOps-Project/helm-chart
+    when: helm_chart_dir.stat.exists
+ 

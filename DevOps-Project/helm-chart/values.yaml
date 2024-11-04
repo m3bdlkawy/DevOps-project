@@ -1,0 +1,37 @@
+# Number of replicas to deploy
+replicaCount: 1
+
+# Container image repository URL (e.g., Docker Hub or GitHub Container Registry)
+image:
+  repository: "m3bdlkawy/depi-project"
+  # The specific tag of the image to deploy
+  tag: "latest"
+
+# Port that the application inside the container listens on
+containerPort: 4200
+
+# Type of the service (NodePort exposes the service on each Node's IP at a static port)
+service:
+  type: NodePort
+  # Port on which the service will be exposed
+  port: 4200
+  # Port on the container to forward traffic to (should match the containerPort)
+  targetPort: 4200
+  # The port on each node for accessing the service (optional; can be left out for automatic assignment by Kubernetes)
+  nodePort: 30000
+
+# Resource limits for the container
+resources:
+  limits:
+    # Maximum amount of memory the container can use
+    memory: "256Mi"
+    # Maximum amount of CPU the container can use
+    cpu: "500m"
+  requests:
+    # Minimum amount of memory the container is guaranteed to have
+    memory: "128Mi"
+    # Minimum amount of CPU the container is guaranteed to have
+    cpu: "250m"
+
+# Namespace for deploying the application (optional, set default if needed)
+namespace: "testing-namespace" # Adjust this to your desired namespace

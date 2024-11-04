@@ -1,0 +1,7 @@
+---
+- name: Install Calico
+  ansible.builtin.command: kubectl apply -f {{ calico_manifest_url }}
+  environment:
+    KUBECONFIG: /home/{{ ansible_user }}/.kube/config
+  register: calico_apply_result
+  changed_when: "'configured' in calico_apply_result.stdout"

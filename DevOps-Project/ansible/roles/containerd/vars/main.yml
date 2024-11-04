@@ -1,0 +1,15 @@
+---
+base_url: "https://download.docker.com/linux/{{ ansible_distribution | lower }}/docker-ce.repo"
+gpgkey: "https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg"
+docker_repo_debian: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release | lower }} stable"
+rhel_base_url: "https://download.docker.com/linux/rhel/docker-ce.repo"
+rhel_gpgkey: "https://download.docker.com/linux/rhel/gpg"
+dnf_dependencies:
+  - curl
+  - gnupg
+  - yum-utils
+  - ca-certificates
+  - device-mapper-persistent-data
+  - lvm2
+  - dnf-plugins-core
+
